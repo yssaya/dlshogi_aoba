@@ -1639,7 +1639,11 @@ std::string Position::toSFEN(const Ply ply) const {
     else {
         // USI の規格として、持ち駒の表記順は決まっており、先手、後手の順で、それぞれ 飛、角、金、銀、桂、香、歩 の順。
         for (Color color = Black; color < ColorNum; ++color) {
+#ifdef AOBA_BOOK
+            for (HandPiece hp : {HPawn, HLance, HKnight, HSilver, HGold, HBishop, HRook }) {	// AobaZeroは逆順
+#else
             for (HandPiece hp : {HRook, HBishop, HGold, HSilver, HKnight, HLance, HPawn}) {
+#endif
                 const int num = hand(color).numOf(hp);
                 if (num == 0)
                     continue;

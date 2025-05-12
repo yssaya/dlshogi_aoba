@@ -50,6 +50,8 @@ extern unsigned int current_root;
 // ノード数の上限
 extern unsigned int po_max;
 
+extern int draw_ply;
+
 // UCT探索の停止フラグ初期化
 void InitUctSearchStop();
 
@@ -62,7 +64,7 @@ void SetPonderingMode(bool flag);
 
 
 // 使用するスレッド数の指定
-constexpr int max_gpu = 8;
+constexpr int max_gpu = 18;
 void SetThread(const int new_thread[max_gpu], const int new_policy_value_batch_maxsize[max_gpu]);
 
 

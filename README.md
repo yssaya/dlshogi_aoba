@@ -1,6 +1,23 @@
 # DeepLearningShogi(dlshogi)
 [![pypi](https://img.shields.io/pypi/v/dlshogi.svg)](https://pypi.python.org/pypi/dlshogi)
 
+これは[dlshogi](https://github.com/TadaoYamaoka/DeepLearningShogi)の2025年4月3日版を元に
+- NNの入力の特徴に手数、手番を追加。
+- 歩の枚数を8枚Maxでなく18枚までに。
+- 手数は190手以上から40手ごとに区切って0(190以下)から8(470以上)の9種類に分ける。
+  (小数点にしたかったがdlshogiは高速化のため0、1のONE HOT専用になってるため)
+- GPUの最大数を8から18に。
+- 定跡用に aobabook.cpp を追加。
+という変更を加えたものです。
+2025年選手権のAobaZeroは、これに384x30bの重みを使ったもので参加しています。
+大会で使った重みはReleaseで公開しています。
+[選手権版AobaZeroの詳細](http://www.yss-aya.com/bbs/patio.cgi?read=174&ukey=0)
+
+
+以下はオリジナルの説明です。
+
+
+
 将棋でディープラーニングの実験をするためのプロジェクトです。
 
 基本的にAlphaGo/AlphaZeroの手法を参考に実装していく方針です。

@@ -11,7 +11,8 @@ MOVE_DIRECTION = [
 MAX_MOVE_LABEL_NUM = len(MOVE_DIRECTION) + 7 # 7はhand piece
 
 MAX_PIECES_IN_HAND = [
-    8, # 歩の持ち駒の上限
+#    8, # 歩の持ち駒の上限
+    18, # 歩の持ち駒の上限
     4, 4, 4,
     4,
     2, 2,
@@ -24,9 +25,10 @@ MAX_PIECES_IN_HAND_SUM = sum(MAX_PIECES_IN_HAND)
 # number of features
 PIECETYPE_NUM = 14 # 駒の種類
 MAX_ATTACK_NUM = 3 # 利き数の最大値
-MAX_FEATURES2_NYUGYOKU_NUM = get_max_features2_nyugyoku_num() # 入玉特徴量の数
+MAX_FEATURES2_NYUGYOKU_NUM = get_max_features2_nyugyoku_num() # 入玉特徴量の数  未定義では0
 FEATURES1_NUM = 2 * (PIECETYPE_NUM + PIECETYPE_NUM + MAX_ATTACK_NUM)
-FEATURES2_NUM = 2 * MAX_PIECES_IN_HAND_SUM + 1 + 2 * MAX_FEATURES2_NYUGYOKU_NUM
+#FEATURES2_NUM = 2 * MAX_PIECES_IN_HAND_SUM + 1 + 2 * MAX_FEATURES2_NYUGYOKU_NUM
+FEATURES2_NUM = 2 * MAX_PIECES_IN_HAND_SUM + 1 + 1 + 8 + 2 * MAX_FEATURES2_NYUGYOKU_NUM # 手番(1)と手数(8)
 
 HuffmanCodedPosAndEval = np.dtype([
     ('hcp', np.uint8, 32),

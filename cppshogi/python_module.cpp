@@ -121,6 +121,7 @@ void __hcpe3_create_cache(const std::string& filepath) {
         Hcpe3CacheBody body{
             hcpe3.hcp,
             hcpe3.value,
+            hcpe3.moveNum,
             hcpe3.result,
             hcpe3.count
         };
@@ -205,6 +206,7 @@ size_t load_hcpe(const std::string& filepath, std::ifstream& ifs, bool use_avera
                 auto& data = trainingData.emplace_back(
                     hcpe.hcp,
                     value,
+                    0,	// 手数はダミーを
                     make_result(hcpe.gameResult, hcpe.hcp.color())
                 );
                 data.candidates[hcpe.bestMove16] = 1;
@@ -222,6 +224,7 @@ size_t load_hcpe(const std::string& filepath, std::ifstream& ifs, bool use_avera
             auto& data = trainingData.emplace_back(
                 hcpe.hcp,
                 value,
+                0,	// 手数はダミーを
                 make_result(hcpe.gameResult, hcpe.hcp.color())
             );
             data.candidates[hcpe.bestMove16] = 1;
@@ -353,6 +356,7 @@ size_t __load_hcpe3(const std::string& filepath, bool use_average, double a, dou
                             auto& data = trainingData.emplace_back(
                                 hcp,
                                 value,
+                                i,	// 初期局面から以外だと正しくないな・・・
                                 make_result(hcpe3.result, pos.turn())
                             );
                             visits_to_proberbility<false>(data, candidates, temperature);
@@ -371,6 +375,7 @@ size_t __load_hcpe3(const std::string& filepath, bool use_average, double a, dou
                         auto& data = trainingData.emplace_back(
                             hcp,
                             value,
+                            i,
                             make_result(hcpe3.result, pos.turn())
                         );
                         visits_to_proberbility<false>(data, candidates, temperature);
@@ -402,6 +407,7 @@ size_t __hcpe3_patch_with_hcpe(const std::string& filepath, size_t& add_len) {
                 found = true;
                 data.count = 1;
                 data.value = value;
+                data.moveNum = 0;	// 手数はダミーを
                 data.result = make_result(hcpe.gameResult, hcpe.hcp.color());
                 data.candidates.clear();
                 data.candidates[hcpe.bestMove16] = 1;
@@ -411,6 +417,7 @@ size_t __hcpe3_patch_with_hcpe(const std::string& filepath, size_t& add_len) {
             auto& data = trainingData.emplace_back(
                 hcpe.hcp,
                 value,
+                0,	// 手数はダミーを
                 make_result(hcpe.gameResult, hcpe.hcp.color())
             );
             data.candidates[hcpe.bestMove16] = 1;
@@ -442,6 +449,7 @@ void __hcpe3_decode_with_value(const size_t len, char* ndindex, char* ndfeatures
 
         Position position;
         position.set(hcpe3.hcp);
+		position.setStartPosPly(hcpe3.moveNum);	// ここで手数を無理やり設定
 
         // input features
         make_input_features(position, features1[i], features2[i]);

@@ -10,6 +10,7 @@
 #include "UctSearch.h"
 #include "Message.h"
 #include "dfpn.h"
+#include "aobabook.h"
 
 #include <future>
 #ifdef MAKE_BOOK
@@ -92,6 +93,10 @@ int main(int argc, char* argv[]) {
 	// リソースの破棄はOSに任せてすぐに終了する
 	std::quick_exit(0);
 }
+
+#ifdef AOBA_BOOK
+std::string latestPosCmd;
+#endif
 
 void MySearcher::doUSICommandLoop(int argc, char* argv[]) {
 	bool evalTableIsRead = false;
@@ -275,6 +280,9 @@ void MySearcher::doUSICommandLoop(int argc, char* argv[]) {
 			// 探索中にsetPositionを行うとStateInfoが壊れるため、探索を停止してから変更する必要があるため、
 			// 文字列の保存のみ行う
 			posCmd = cmd.substr((size_t)ssCmd.tellg() + 1);
+#ifdef AOBA_BOOK
+			latestPosCmd = posCmd;
+#endif
 		}
 		else if (token == "usinewgame"); // isready で準備は出来たので、対局開始時に特にする事はない。
 		else if (token == "usi") std::cout << "id name " << std::string(options["Engine_Name"])
@@ -286,7 +294,8 @@ void MySearcher::doUSICommandLoop(int argc, char* argv[]) {
 			if (!initialized) {
 				// 各種初期化
 				InitializeUctSearch(options["UCT_NodeLimit"]);
-				const std::string model_paths[max_gpu] = { options["DNN_Model"], options["DNN_Model2"], options["DNN_Model3"], options["DNN_Model4"], options["DNN_Model5"], options["DNN_Model6"], options["DNN_Model7"], options["DNN_Model8"] };
+//				const std::string model_paths[max_gpu] = { options["DNN_Model"], options["DNN_Model2"], options["DNN_Model3"], options["DNN_Model4"], options["DNN_Model5"], options["DNN_Model6"], options["DNN_Model7"], options["DNN_Model8"] };
+				const std::string model_paths[max_gpu] = { options["DNN_Model"], options["DNN_Model2"], options["DNN_Model3"], options["DNN_Model4"], options["DNN_Model5"], options["DNN_Model6"], options["DNN_Model7"], options["DNN_Model8"], options["DNN_Model9"], options["DNN_Model10"], options["DNN_Model11"], options["DNN_Model12"], options["DNN_Model13"], options["DNN_Model14"], options["DNN_Model15"], options["DNN_Model16"], options["DNN_Model17"], options["DNN_Model18"] };
 				// モデルファイル存在チェック
 				{
 					bool is_err = false;
@@ -327,8 +336,10 @@ void MySearcher::doUSICommandLoop(int argc, char* argv[]) {
                     read_book(options["Book_File"], bookMap);
                 }
 #endif
-                const int new_thread[max_gpu] = { options["UCT_Threads"], options["UCT_Threads2"], options["UCT_Threads3"], options["UCT_Threads4"], options["UCT_Threads5"], options["UCT_Threads6"], options["UCT_Threads7"], options["UCT_Threads8"] };
-				const int new_policy_value_batch_maxsize[max_gpu] = { options["DNN_Batch_Size"], options["DNN_Batch_Size2"], options["DNN_Batch_Size3"], options["DNN_Batch_Size4"], options["DNN_Batch_Size5"], options["DNN_Batch_Size6"], options["DNN_Batch_Size7"], options["DNN_Batch_Size8"] };
+//              const int new_thread[max_gpu] = { options["UCT_Threads"], options["UCT_Threads2"], options["UCT_Threads3"], options["UCT_Threads4"], options["UCT_Threads5"], options["UCT_Threads6"], options["UCT_Threads7"], options["UCT_Threads8"] };
+				const int new_thread[max_gpu] = { options["UCT_Threads"], options["UCT_Threads2"], options["UCT_Threads3"], options["UCT_Threads4"], options["UCT_Threads5"], options["UCT_Threads6"], options["UCT_Threads7"], options["UCT_Threads8"], options["UCT_Threads9"], options["UCT_Threads10"], options["UCT_Threads11"], options["UCT_Threads12"], options["UCT_Threads13"], options["UCT_Threads14"], options["UCT_Threads15"], options["UCT_Threads16"], options["UCT_Threads17"], options["UCT_Threads18"] };
+//				const int new_policy_value_batch_maxsize[max_gpu] = { options["DNN_Batch_Size"], options["DNN_Batch_Size2"], options["DNN_Batch_Size3"], options["DNN_Batch_Size4"], options["DNN_Batch_Size5"], options["DNN_Batch_Size6"], options["DNN_Batch_Size7"], options["DNN_Batch_Size8"] };
+				const int new_policy_value_batch_maxsize[max_gpu] = { options["DNN_Batch_Size"], options["DNN_Batch_Size2"], options["DNN_Batch_Size3"], options["DNN_Batch_Size4"], options["DNN_Batch_Size5"], options["DNN_Batch_Size6"], options["DNN_Batch_Size7"], options["DNN_Batch_Size8"], options["DNN_Batch_Size9"], options["DNN_Batch_Size10"], options["DNN_Batch_Size11"], options["DNN_Batch_Size12"], options["DNN_Batch_Size13"], options["DNN_Batch_Size14"], options["DNN_Batch_Size15"], options["DNN_Batch_Size16"], options["DNN_Batch_Size17"], options["DNN_Batch_Size18"] };
 				SetThread(new_thread, new_policy_value_batch_maxsize);
 
 				if (options["Mate_Root_Search"] > 0) {
@@ -409,6 +420,10 @@ void MySearcher::doUSICommandLoop(int argc, char* argv[]) {
 			SetLimits(limits);
 			Move ponder;
 			UctSearchGenmove(&pos_tmp, pos_tmp.getKey(), {}, ponder);
+
+#ifdef AOBA_BOOK
+			read_sfen_best();
+#endif
 
 			// 固定プレイアウトモード
 			SetConstPlayout(options["Const_Playout"]);
@@ -498,6 +513,21 @@ void MySearcher::setPositionAndLimits(Position& pos, std::istringstream& ssCmd, 
 
 void MySearcher::goUct(Position& pos) {
 	Move ponderMove = Move::moveNone();
+
+#ifdef AOBA_BOOK
+	{
+		std::string sfen = "position " + pos.toSFEN();
+		std::cerr << "aobabook sfen=" << sfen << std::endl;
+		std::cerr << "latestPosCmd=" << latestPosCmd << std::endl;
+		std::string bookmove = get_dlshogi_book(sfen, latestPosCmd);
+		if ( bookmove.size() ) {
+			auto move = usiToMove(pos, bookmove);
+			std::cout << "info" << " score cp 0 pv " << bookmove << std::endl;
+			promise.set_value({ move, Move::moveNone() });
+			return;
+		}
+	}
+#endif
 
 	// Book使用
 	static Book book;

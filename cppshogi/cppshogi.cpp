@@ -2,6 +2,7 @@
 #include <algorithm>
 
 #include "cppshogi.h"
+#include "UctSearch.h"
 
 inline void set_features1(features1_t features1, const Color c, const int f1idx, const Square sq)
 {
@@ -157,6 +158,40 @@ inline void make_input_features(const Position& position, T1 features1, T2 featu
 	if (position.inCheck()) {
 		set_features2(features2, MAX_FEATURES2_HAND_NUM);
 	}
+
+	// 手番
+	if (turn == White) {
+		set_features2(features2, MAX_FEATURES2_HAND_NUM + 1);
+	}
+	// 手数は40手ごとに区切る。190手まで0、230手まで1、470手まで7、以降は8
+	int gp_org = position.gamePly();
+
+	const int MAX_DRAW_MOVES = 513;	// 513手目が指せれば引き分け
+	float div = MAX_DRAW_MOVES-1;
+	// 513手目が指せれば引き分け。floodgateは256手目(513手目、2024年1月7日から)が指せれば引き分け。選手権は321手目が指せれば引き分け。
+	int tt = gp_org;	// + sfen_current_move_number;
+	if ( tt > div ) tt = div;
+	if ( draw_ply && draw_ply < MAX_DRAW_MOVES ) {
+		int draw = draw_ply;	// 256, 321
+		int w = 160;	// 何手前から増加させるか。256手引き分けでw=60なら196手から増加
+		if ( draw - w < 0 ) w = draw;
+		int d = draw - w;
+//		if ( tt > d ) tt += 513 - draw;				// 突然増加
+//		if ( tt > d ) tt = (tt-d)*(513-d)/w + d;	// 線形に増加
+		if ( tt > d ) tt = (int)(1.0 / (1.0 + exp(-5.0*((tt-d)*2.0/w - 1.0))) * (513 - d) + d);	// sigmoidで半分で急激に増加, a = 5
+//		PRT("tt=%d -> %d\n",t + sfen_current_move_number,tt);
+	}
+	int gp = tt;
+//	fprintf(stderr,"gp_org=%d -> gp=%d(draw_ply=%d)\n",gp_org,gp,draw_ply);
+        
+	if ( gp > 190 ) {
+		int g = ((gp - 190) / 40) + 1;
+//		if ( g < 0 ) g = 0;
+		if ( g > 8 ) g = 8;
+		set_features2(features2, MAX_FEATURES2_HAND_NUM + 2 + g-1);	// 460手だと7, "00000010"
+//		set_features2(features2, (int)ColorNum, 2, g);
+	}
+
 }
 
 void make_input_features(const Position& position, features1_t features1, features2_t features2) {

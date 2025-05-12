@@ -7,7 +7,8 @@
 
 #define LEN(array) (sizeof(array) / sizeof(array[0]))
 
-constexpr int MAX_HPAWN_NUM = 8; // 歩の持ち駒の上限
+//constexpr int MAX_HPAWN_NUM = 8; // 歩の持ち駒の上限
+constexpr int MAX_HPAWN_NUM = 18; // 歩の持ち駒の上限
 constexpr int MAX_HLANCE_NUM = 4;
 constexpr int MAX_HKNIGHT_NUM = 4;
 constexpr int MAX_HSILVER_NUM = 4;
@@ -36,7 +37,8 @@ constexpr u32 MAX_FEATURES2_NYUGYOKU_NUM = 1/*入玉*/ + MAX_NYUGYOKU_OPP_FIELD 
 constexpr int PIECETYPE_NUM = 14; // 駒の種類
 constexpr int MAX_ATTACK_NUM = 3; // 利き数の最大値
 constexpr u32 MAX_FEATURES1_NUM = PIECETYPE_NUM/*駒の配置*/ + PIECETYPE_NUM/*駒の利き*/ + MAX_ATTACK_NUM/*利き数*/;
-constexpr u32 MAX_FEATURES2_NUM = MAX_FEATURES2_HAND_NUM + 1/*王手*/
+//constexpr u32 MAX_FEATURES2_NUM = MAX_FEATURES2_HAND_NUM + 1/*王手*/
+constexpr u32 MAX_FEATURES2_NUM = MAX_FEATURES2_HAND_NUM + 1/*王手*/ + 1/*手番*/ + 8/*手数*/;
 #ifdef NYUGYOKU_FEATURES
     + (int)ColorNum * MAX_FEATURES2_NYUGYOKU_NUM
 #endif
@@ -53,10 +55,10 @@ enum MOVE_DIRECTION {
 constexpr int MAX_MOVE_LABEL_NUM = MOVE_DIRECTION_NUM + HandPieceNum;
 
 typedef char packed_features1_t[((size_t)ColorNum * MAX_FEATURES1_NUM * (size_t)SquareNum + 7) / 8];
-typedef char packed_features2_t[((size_t)MAX_FEATURES2_NUM + 7) / 8];
+typedef char packed_features2_t[((size_t)MAX_FEATURES2_NUM + 7) / 8];	// 0 or 1で8bitでまとめてるのか。1個なら1byte、8個も1byte、9個で2byte
 
 typedef DType features1_t[ColorNum][MAX_FEATURES1_NUM][SquareNum];
-typedef DType features2_t[MAX_FEATURES2_NUM][SquareNum];
+typedef DType features2_t[MAX_FEATURES2_NUM][SquareNum];	// DTypeはfloat。FP16では16bit。SquareNum=81
 
 void make_input_features(const Position& position, features1_t features1, features2_t features2);
 void make_input_features(const Position& position, packed_features1_t packed_features1, packed_features2_t packed_features2);
@@ -103,6 +105,7 @@ static_assert(sizeof(MoveVisits) == 4, "");
 struct Hcpe3CacheBody {
 	HuffmanCodedPos hcp; // 局面
 	float value;
+	int moveNum;	// 手数を追加
 	float result;
 	int count; // 重複カウント
 };
@@ -114,8 +117,8 @@ struct Hcpe3CacheCandidate {
 
 struct TrainingData {
     TrainingData() = default;
-	TrainingData(const HuffmanCodedPos& hcp, const float value, const float result)
-		: hcp(hcp), value(value), result(result), count(1) {};
+	TrainingData(const HuffmanCodedPos& hcp, const float value, const int moveNum, const float result)
+		: hcp(hcp), value(value), moveNum(moveNum), result(result), count(1) {};
 	TrainingData(const Hcpe3CacheBody& body, const Hcpe3CacheCandidate* candidates, const size_t candidateNum)
 		: hcp(body.hcp), value(body.value), result(body.result), count(body.count), candidates(candidateNum) {
 		for (size_t i = 0; i < candidateNum; i++) {
@@ -125,6 +128,7 @@ struct TrainingData {
 
 	HuffmanCodedPos hcp;
 	float value;
+	int moveNum;	// 手数を追加
 	float result;
 	std::unordered_map<u16, float> candidates;
 	int count; // 重複カウント
